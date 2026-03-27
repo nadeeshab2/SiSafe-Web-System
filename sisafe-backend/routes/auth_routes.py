@@ -27,68 +27,102 @@ def init_oauth(app):
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    name = data.get("name")
-    email = data.get("email")
-    password = data.get("password")
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
 
-    if not name or not email or not password:
-        return jsonify({"error": "All fields required"}), 400
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "").strip()
 
-    existing = users_collection.find_one({"email": email})
-    if existing:
-        return jsonify({"error": "User exists"}), 409
+        if not name or not email or not password:
+            return jsonify({"error": "All fields required"}), 400
 
-    hashed = generate_password_hash(password)
+        existing = users_collection.find_one({"email": email})
+        if existing:
+            return jsonify({"error": "User exists"}), 409
 
-    user = {
-        "name": name,
-        "email": email,
-        "password": hashed,
-        "provider": "local",
-        "google_id": None,
-        "created_at": datetime.utcnow()
-    }
+        hashed = generate_password_hash(password)
 
-    result = users_collection.insert_one(user)
-    user["_id"] = result.inserted_id
+        user = {
+            "name": name,
+            "email": email,
+            "password": hashed,
+            "provider": "local",
+            "google_id": None,
+            "created_at": datetime.utcnow()
+        }
 
-    token = create_token(user)
+        result = users_collection.insert_one(user)
+        user["_id"] = str(result.inserted_id)
 
-    return jsonify({
-        "message": "Registered",
-        "token": token
-    }), 201
+        token = create_token(user)
+
+        return jsonify({
+            "message": "Registered successfully",
+            "token": token,
+            "user": {
+                "id": user["_id"],
+                "name": user["name"],
+                "email": user["email"],
+                "provider": user["provider"]
+            }
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    email = data.get("email")
-    password = data.get("password")
+        if not data:
+            return jsonify({"error": "Invalid JSON data"}), 400
 
-    if not email or not password:
-        return jsonify({"error": "Email and password required"}), 400
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "").strip()
 
-    user = users_collection.find_one({"email": email})
+        if not email or not password:
+            return jsonify({"error": "Email and password required"}), 400
 
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+        user = users_collection.find_one({"email": email})
 
-    if user.get("provider") == "google":
-        return jsonify({"error": "This account uses Google login"}), 400
+        if not user:
+            return jsonify({"error": "User not found"}), 404
 
-    if not check_password_hash(user["password"], password):
-        return jsonify({"error": "Wrong password"}), 401
+        if user.get("provider") == "google":
+            return jsonify({"error": "This account uses Google login"}), 400
 
-    token = create_token(user)
+        if not user.get("password"):
+            return jsonify({"error": "Password not set for this account"}), 400
 
-    return jsonify({
-        "message": "Login success",
-        "token": token
-    }), 200
+        if not check_password_hash(user["password"], password):
+            return jsonify({"error": "Wrong password"}), 401
+
+        token = create_token({
+            "_id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"],
+            "provider": user["provider"]
+        })
+
+        return jsonify({
+            "message": "Login successful",
+            "token": token,
+            "user": {
+                "id": str(user["_id"]),
+                "name": user["name"],
+                "email": user["email"],
+                "provider": user["provider"]
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @auth_bp.route("/google/login")
@@ -106,8 +140,8 @@ def google_callback():
         if not user_info:
             return jsonify({"error": "Failed to get Google user info"}), 400
 
-        email = user_info["email"]
-        name = user_info.get("name", "")
+        email = user_info.get("email", "").strip().lower()
+        name = user_info.get("name", "").strip()
         google_id = user_info.get("sub")
 
         user = users_collection.find_one({"email": email})
@@ -122,7 +156,7 @@ def google_callback():
                 "created_at": datetime.utcnow()
             }
             result = users_collection.insert_one(new_user)
-            new_user["_id"] = result.inserted_id
+            new_user["_id"] = str(result.inserted_id)
             user = new_user
         else:
             if not user.get("google_id"):
@@ -133,7 +167,15 @@ def google_callback():
                 user["provider"] = "google"
                 user["google_id"] = google_id
 
-        jwt_token = create_token(user)
+            user["_id"] = str(user["_id"])
+
+        jwt_token = create_token({
+            "_id": user["_id"],
+            "name": user["name"],
+            "email": user["email"],
+            "provider": user["provider"]
+        })
+
         frontend_url = os.getenv("FRONTEND_URL")
         return redirect(f"{frontend_url}/login-success?token={jwt_token}")
 
