@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 import os
 import joblib
 from scipy.sparse import hstack
+
+from config.db import detections_collection
 
 plugin_bp = Blueprint("plugin", __name__)
 
@@ -59,8 +62,20 @@ def plugin_check():
 
         action = "warn" if result == "Hate Speech" else "allow"
 
+        # Save plugin detection to MongoDB
+        saved_result = detections_collection.insert_one({
+            "text": text,
+            "prediction": result,
+            "confidence": confidence,
+            "source": "plugin",
+            "action": action,
+            "created_at": datetime.utcnow()
+        })
+
         return jsonify({
             "success": True,
+            "message": "Plugin check completed successfully",
+            "detection_id": str(saved_result.inserted_id),
             "prediction": result,
             "confidence": confidence,
             "action": action
