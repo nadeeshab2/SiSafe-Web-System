@@ -5,7 +5,8 @@ import os
 
 # 🔥 Import routes
 from routes.auth_routes import auth_bp, init_oauth
-from routes.predict_routes import predict_bp   # ✅ NEW LINE
+from routes.predict_routes import predict_bp
+from routes.report_routes import report_bp   # ✅ NEW LINE
 
 load_dotenv()
 
@@ -20,12 +21,13 @@ init_oauth(app)
 
 # 🔥 Register routes
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
-app.register_blueprint(predict_bp, url_prefix="/api")   # ✅ NEW LINE
+app.register_blueprint(predict_bp, url_prefix="/api")
+app.register_blueprint(report_bp, url_prefix="/api")   # ✅ NEW LINE
 
 
 @app.route("/")
 def home():
-    return "SiSafe Auth Backend Running"
+    return "SiSafe Backend Running"   # (optional change)
 
 
 if __name__ == "__main__":
