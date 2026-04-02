@@ -1,9 +1,19 @@
-import { Link } from "react-router-dom";
+/* eslint-disable no-unused-vars */
+import { Link, useNavigate } from "react-router-dom";
 import { FaShieldAlt } from "react-icons/fa";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user")) || null;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
   return (
     <motion.nav
       initial={{ y: -60, opacity: 0 }}
@@ -28,15 +38,42 @@ function Navbar() {
           <a href="#features" className="hover:text-cyan-400 transition">Features</a>
           <a href="#detect" className="hover:text-cyan-400 transition">Detect</a>
           <a href="#about" className="hover:text-cyan-400 transition">About</a>
+          {token && (
+            <Link to="/dashboard" className="hover:text-cyan-400 transition">
+              Dashboard
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="px-5 py-2 rounded-xl border border-blue-500 text-blue-200 font-medium hover:bg-blue-900/30 transition">
-            Login
-          </button>
-          <button className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-medium shadow-lg hover:scale-105 transition">
-            Sign Up
-          </button>
+          {token ? (
+            <>
+              <span className="hidden md:block text-cyan-300 font-medium">
+                Hi, {user?.name || "User"}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-5 py-2 rounded-xl border border-blue-500 text-blue-200 font-medium hover:bg-blue-900/30 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="px-5 py-2 rounded-xl border border-blue-500 text-blue-200 font-medium hover:bg-blue-900/30 transition"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-medium shadow-lg hover:scale-105 transition"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </motion.nav>
