@@ -42,11 +42,15 @@ function Login() {
         JSON.stringify({
           name: data?.user?.name || "User",
           email: data?.user?.email || formData.email,
+          age: data?.user?.age || "Not Available",
+          provider: data?.user?.provider || "local",
         })
       );
 
+      localStorage.setItem("lastLogin", new Date().toLocaleString());
+
       alert("Login successful.");
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       alert(error?.response?.data?.error || "Login failed.");
@@ -71,11 +75,11 @@ function Login() {
           >
             <p className="text-cyan-400 font-semibold mb-3">Welcome Back</p>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-              Login to access your personal SiSafe dashboard
+              Login to access your personal SiSafe analytics dashboard
             </h1>
             <p className="mt-6 text-slate-300 leading-8">
-              Continue your Sinhala detection workflow, view your stats, and manage
-              your future detection activity from one place.
+              Continue your Sinhala detection workflow, monitor activity, and
+              access your personalized analytics in one place.
             </p>
           </motion.div>
 

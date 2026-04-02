@@ -11,6 +11,7 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("lastLogin");
     navigate("/");
   };
 
@@ -38,9 +39,10 @@ function Navbar() {
           <a href="#features" className="hover:text-cyan-400 transition">Features</a>
           <a href="#detect" className="hover:text-cyan-400 transition">Detect</a>
           <a href="#about" className="hover:text-cyan-400 transition">About</a>
+
           {token && (
             <Link to="/dashboard" className="hover:text-cyan-400 transition">
-              Dashboard
+              Analytics Dashboard
             </Link>
           )}
         </div>
@@ -51,6 +53,7 @@ function Navbar() {
               <span className="hidden md:block text-cyan-300 font-medium">
                 Hi, {user?.name || "User"}
               </span>
+
               <button
                 onClick={handleLogout}
                 className="px-5 py-2 rounded-xl border border-blue-500 text-blue-200 font-medium hover:bg-blue-900/30 transition"
@@ -66,6 +69,7 @@ function Navbar() {
               >
                 Login
               </Link>
+
               <Link
                 to="/signup"
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-medium shadow-lg hover:scale-105 transition"
