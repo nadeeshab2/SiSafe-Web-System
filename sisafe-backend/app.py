@@ -12,10 +12,16 @@ from routes.plugin_routes import plugin_bp
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # local development only
 
-# CORS enable
-CORS(app, supports_credentials=True)
+CORS(
+    app,
+    resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174"]}},
+    supports_credentials=True,
+)
 
 # OAuth init
 init_oauth(app)
@@ -29,7 +35,7 @@ app.register_blueprint(plugin_bp, url_prefix="/api")
 
 @app.route("/")
 def home():
-    return "SiSafe Backend Running"
+    return {"message": "SiSafe backend is running"}
 
 
 if __name__ == "__main__":

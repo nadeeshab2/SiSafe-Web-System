@@ -4,6 +4,8 @@ import DetectResult from "../pages/DetectResult";
 import Signup from "../pages/Signup";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
+import LoginSuccess from "../pages/LoginSuccess";
+import FileDetect from "../pages/FileDetect";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
@@ -13,6 +15,8 @@ function AppRouter() {
       <Route path="/detect-result" element={<DetectResult />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/login-success" element={<LoginSuccess />} />
+      <Route path="/file-detect" element={<FileDetect />} />
       <Route
         path="/dashboard"
         element={

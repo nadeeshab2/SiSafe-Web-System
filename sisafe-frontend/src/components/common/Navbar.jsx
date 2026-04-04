@@ -23,6 +23,7 @@ function Navbar() {
       className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-blue-900/40"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+        {/* Logo / Brand → always go Home */}
         <Link to="/" className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-r from-blue-700 to-cyan-500 flex items-center justify-center text-white shadow-lg">
             <FaShieldAlt size={20} />
@@ -34,11 +35,23 @@ function Navbar() {
           </div>
         </Link>
 
+        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-200">
-          <a href="#home" className="hover:text-cyan-400 transition">Home</a>
-          <a href="#features" className="hover:text-cyan-400 transition">Features</a>
-          <a href="#detect" className="hover:text-cyan-400 transition">Detect</a>
-          <a href="#about" className="hover:text-cyan-400 transition">About</a>
+          <Link to="/#home" className="hover:text-cyan-400 transition">
+            Home
+          </Link>
+
+          <Link to="/#features" className="hover:text-cyan-400 transition">
+            Features
+          </Link>
+
+          <Link to="/#detect" className="hover:text-cyan-400 transition">
+            Detect
+          </Link>
+
+          <Link to="/#about" className="hover:text-cyan-400 transition">
+            About
+          </Link>
 
           {token && (
             <Link to="/dashboard" className="hover:text-cyan-400 transition">
@@ -47,6 +60,7 @@ function Navbar() {
           )}
         </div>
 
+        {/* Right Side */}
         <div className="flex items-center gap-3">
           {token ? (
             <>
