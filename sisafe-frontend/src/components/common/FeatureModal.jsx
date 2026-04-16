@@ -9,15 +9,29 @@ function FeatureModal({ isOpen, onClose }) {
   const navigate = useNavigate();
 
   const handleDetect = () => {
-    navigate("/detect-result", {
-      state: {
-        inputText: `${selectedMode} detection selected`,
-        prediction: "Pending Detection",
-        confidence: null,
-        selectedMode,
-      },
-    });
-    onClose();
+    if (selectedMode === "text") {
+      onClose();
+      document.getElementById("detect")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    if (selectedMode === "file") {
+      onClose();
+      navigate("/file-detect");
+      return;
+    }
+
+    if (selectedMode === "voice") {
+      onClose();
+      navigate("/detect-result", {
+        state: {
+          inputText: "Voice detection selected",
+          prediction: "Coming Soon",
+          confidence: null,
+          selectedMode: "voice",
+        },
+      });
+    }
   };
 
   const getCardClass = (mode) =>

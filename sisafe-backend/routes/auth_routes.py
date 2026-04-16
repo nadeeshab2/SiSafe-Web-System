@@ -21,7 +21,7 @@ def init_oauth(app):
         client_id=os.getenv("GOOGLE_CLIENT_ID"),
         client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
         server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-        client_kwargs={"scope": "openid email profile"}
+        client_kwargs={"scope": "openid email profile"},
     )
 
 
@@ -36,40 +36,37 @@ def register():
         name = data.get("name", "").strip()
         email = data.get("email", "").strip().lower()
         password = data.get("password", "").strip()
+        age = data.get("age")
 
-        if not name or not email or not password:
-            return jsonify({"error": "All fields required"}), 400
+        if not name or not email or not password or age is None:
+            return jsonify({"error": "All fields are required"}), 400
 
-        existing = users_collection.find_one({"email": email})
-        if existing:
-            return jsonify({"error": "User exists"}), 409
+        try:
+            age = int(age)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Age must be a valid number"}), 400
 
-        hashed = generate_password_hash(password)
+        if age < 10 or age > 100:
+            return jsonify({"error": "Please enter a valid age"}), 400
 
-        user = {
+        existing_user = users_collection.find_one({"email": email})
+        if existing_user:
+            return jsonify({"error": "Email already registered"}), 409
+
+        hashed_password = generate_password_hash(password)
+
+        new_user = {
             "name": name,
             "email": email,
-            "password": hashed,
+            "password": hashed_password,
+            "age": age,
             "provider": "local",
-            "google_id": None,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
         }
 
-        result = users_collection.insert_one(user)
-        user["_id"] = str(result.inserted_id)
+        users_collection.insert_one(new_user)
 
-        token = create_token(user)
-
-        return jsonify({
-            "message": "Registered successfully",
-            "token": token,
-            "user": {
-                "id": user["_id"],
-                "name": user["name"],
-                "email": user["email"],
-                "provider": user["provider"]
-            }
-        }), 201
+        return jsonify({"message": "User registered successfully"}), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -87,27 +84,30 @@ def login():
         password = data.get("password", "").strip()
 
         if not email or not password:
-            return jsonify({"error": "Email and password required"}), 400
+            return jsonify({"error": "Email and password are required"}), 400
 
         user = users_collection.find_one({"email": email})
 
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        if user.get("provider") == "google":
+        provider = user.get("provider", "local")
+
+        if provider == "google":
             return jsonify({"error": "This account uses Google login"}), 400
 
-        if not user.get("password"):
+        stored_password = user.get("password")
+        if not stored_password:
             return jsonify({"error": "Password not set for this account"}), 400
 
-        if not check_password_hash(user["password"], password):
+        if not check_password_hash(stored_password, password):
             return jsonify({"error": "Wrong password"}), 401
 
         token = create_token({
             "_id": str(user["_id"]),
-            "name": user["name"],
-            "email": user["email"],
-            "provider": user["provider"]
+            "name": user.get("name", ""),
+            "email": user.get("email", ""),
+            "provider": provider,
         })
 
         return jsonify({
@@ -115,10 +115,11 @@ def login():
             "token": token,
             "user": {
                 "id": str(user["_id"]),
-                "name": user["name"],
-                "email": user["email"],
-                "provider": user["provider"]
-            }
+                "name": user.get("name", ""),
+                "email": user.get("email", ""),
+                "age": user.get("age", "Not Available"),
+                "provider": provider,
+            },
         }), 200
 
     except Exception as e:
@@ -151,29 +152,34 @@ def google_callback():
                 "name": name,
                 "email": email,
                 "password": None,
+                "age": None,
                 "provider": "google",
                 "google_id": google_id,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.utcnow(),
             }
             result = users_collection.insert_one(new_user)
-            new_user["_id"] = str(result.inserted_id)
-            user = new_user
+            user = users_collection.find_one({"_id": result.inserted_id})
         else:
+            update_fields = {}
+
             if not user.get("google_id"):
+                update_fields["google_id"] = google_id
+
+            if user.get("provider") != "google":
+                update_fields["provider"] = "google"
+
+            if update_fields:
                 users_collection.update_one(
                     {"_id": user["_id"]},
-                    {"$set": {"provider": "google", "google_id": google_id}}
+                    {"$set": update_fields},
                 )
-                user["provider"] = "google"
-                user["google_id"] = google_id
-
-            user["_id"] = str(user["_id"])
+                user = users_collection.find_one({"_id": user["_id"]})
 
         jwt_token = create_token({
-            "_id": user["_id"],
-            "name": user["name"],
-            "email": user["email"],
-            "provider": user["provider"]
+            "_id": str(user["_id"]),
+            "name": user.get("name", ""),
+            "email": user.get("email", ""),
+            "provider": user.get("provider", "google"),
         })
 
         frontend_url = os.getenv("FRONTEND_URL")

@@ -11,7 +11,6 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = None
 
-        # Get token from header
         auth_header = request.headers.get("Authorization")
 
         if auth_header and auth_header.startswith("Bearer "):
@@ -21,10 +20,26 @@ def token_required(f):
             return jsonify({"error": "Token is missing"}), 401
 
         try:
-            decoded = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+            decoded = jwt.decode(
+                token,
+                os.getenv("SECRET_KEY"),
+                algorithms=["HS256"]
+            )
+
             request.user = decoded
-        except Exception:
-            return jsonify({"error": "Invalid or expired token"}), 401
+            request.user_id = decoded.get("user_id") or decoded.get("_id")
+            request.user_email = decoded.get("email")
+            request.user_name = decoded.get("name")
+            request.user_provider = decoded.get("provider", "local")
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token has expired"}), 401
+
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
 
         return f(*args, **kwargs)
 
