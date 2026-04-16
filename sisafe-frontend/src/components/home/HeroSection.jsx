@@ -122,6 +122,10 @@ function HeroSection() {
         </div>
       </section>
 
+      <section id="detect">
+        {/* Add content for the detect section here */}
+      </section>
+
       <FeatureModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );
