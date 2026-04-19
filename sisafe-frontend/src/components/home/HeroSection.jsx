@@ -10,6 +10,10 @@ function HeroSection() {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
+  const [file, setFile] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   const handleDetect = async () => {
     if (!text.trim()) {
@@ -40,6 +44,66 @@ function HeroSection() {
 
   const handleTryDetection = () => {
     document.getElementById("detect")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setFile(e.dataTransfer.files[0]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleFileDetect = async () => {
+    if (!file) {
+      alert("Please upload a file first.");
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("http://127.0.0.1:5000/api/upload-detect", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("🔥 API RESPONSE:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      navigate("/detect-result", {
+        state: {
+          inputText: data.text || "No text detected",
+          prediction: data.prediction || "No result",
+          confidence: data.confidence ?? null,
+          selectedMode: "file",
+          highlightedWords: data.highlighted_words || [],
+        },
+      });
+
+      // reset file after success
+      setFile(null);
+
+      const input = document.getElementById("fileUpload");
+      if (input) input.value = "";
+    } catch (error) {
+      console.error("File detection failed:", error);
+      alert(error.message || "File detection failed");
+    } finally {
+      setUploadLoading(false);
+    }
   };
 
   return (
@@ -117,6 +181,50 @@ function HeroSection() {
               className="w-full mt-5 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold shadow-lg hover:scale-[1.02] transition disabled:opacity-70"
             >
               {loading ? "Detecting..." : "Detect Now"}
+            </button>
+
+           
+
+           
+
+            {/* CLEAN FILE UPLOAD UI */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="mt-6 p-6 border-2 border-dashed border-slate-600 rounded-2xl text-center hover:border-cyan-400 transition"
+            >
+              <p className="text-slate-300 mb-2">
+                Drag & Drop social media post (image) here
+              </p>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                id="fileUpload"
+              />
+
+              <label
+                htmlFor="fileUpload"
+                className="cursor-pointer text-cyan-400 font-semibold"
+              >
+                OR Click to Upload
+              </label>
+
+              {file && (
+                <p className="mt-2 text-green-400 text-sm">
+                  Selected: {file.name}
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={handleFileDetect}
+              disabled={uploadLoading}
+              className="w-full mt-4 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold"
+            >
+              {uploadLoading ? "Analyzing..." : "Upload & Detect"}
             </button>
           </motion.div>
         </div>

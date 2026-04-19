@@ -7,7 +7,10 @@ function DetectResult() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { inputText, prediction, confidence, selectedMode } = location.state || {};
+  const { inputText, prediction, confidence, selectedMode, highlightedWords } = location.state || {};
+
+  console.log("INPUT:", inputText);
+  console.log("HIGHLIGHT:", highlightedWords);
 
   const getBadgeColor = () => {
     if (prediction === "Hate Speech") {
@@ -17,6 +20,34 @@ function DetectResult() {
       return "bg-green-500/15 text-green-400 border border-green-500/30";
     }
     return "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30";
+  };
+
+  // Highlight support for inputText
+  const renderHighlightedText = () => {
+    if (!inputText) return "No content detected.";
+
+    if (!highlightedWords || highlightedWords.length === 0) {
+      return inputText;
+    }
+
+    // 🔥 normalize words (remove punctuation)
+    const cleanHighlighted = highlightedWords.map(w =>
+      w.replace(/[.,!?]/g, "").trim()
+    );
+
+    return inputText.split(" ").map((word, index) => {
+      const cleanWord = word.replace(/[.,!?]/g, "").trim();
+
+      if (cleanHighlighted.includes(cleanWord)) {
+        return (
+          <span key={index} className="text-red-400 font-bold">
+            {word}{" "}
+          </span>
+        );
+      }
+
+      return word + " ";
+    });
   };
 
   return (
@@ -55,7 +86,7 @@ function DetectResult() {
             <div className="rounded-2xl border border-slate-700 bg-slate-950/40 p-6 mb-6">
               <h3 className="text-slate-300 text-sm mb-3">Input Content</h3>
               <p className="text-slate-100 leading-8">
-                {inputText || "No input found."}
+                {renderHighlightedText() || "No input found"}
               </p>
             </div>
 
