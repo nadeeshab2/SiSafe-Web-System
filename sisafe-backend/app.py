@@ -9,6 +9,7 @@ from routes.predict_routes import predict_bp
 from routes.report_routes import report_bp
 from routes.plugin_routes import plugin_bp
 from routes.upload_detect_routes import upload_bp
+from routes.voice_detect_routes import voice_bp
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ def create_app():
     app.register_blueprint(report_bp, url_prefix="/api")
     app.register_blueprint(plugin_bp, url_prefix="/api")
     app.register_blueprint(upload_bp, url_prefix="/api")
+    app.register_blueprint(voice_bp, url_prefix="/api")
 
     # 🏠 Home route
     @app.route("/")
